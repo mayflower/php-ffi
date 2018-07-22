@@ -8,16 +8,26 @@ if test "$PHP_FFI" != "no"; then
     FFI_DIR=$PHP_FFI
   else
     AC_MSG_CHECKING(for libffi in default path)
+    MACHINE_INCLUDES=$($CC -dumpmachine)
     for i in /usr/local /usr; do
       if test -r $i/include/ffi.h; then
         FFI_DIR=$i
-        AC_MSG_RESULT(found in $i)
+        break
+      elif test -r $i/include/ffi/ffi.h; then
+        FFI_DIR=$i
+        PHP_ADD_INCLUDE($i/include/ffi)
+        break
+      elif test -r $i/include/$MACHINE_INCLUDES/ffi.h; then
+        FFI_DIR=$i
+        PHP_ADD_INCLUDE($i/include/$MACHINE_INCLUDES)
         break
       fi
     done
   fi
 
-  if test -z "$FFI_DIR"; then
+  if test -n "$FFI_DIR"; then
+    AC_MSG_RESULT(found in $FFI_DIR)
+  else
     AC_MSG_RESULT(not found)
     AC_MSG_ERROR(Please reinstall the libffi distribution)
   fi
@@ -26,7 +36,6 @@ if test "$PHP_FFI" != "no"; then
 
   PHP_CHECK_LIBRARY(ffi, ffi_call, 
   [
-    PHP_ADD_INCLUDE($FFI_DIR/include)
     PHP_ADD_LIBRARY_WITH_PATH(ffi, $FFI_DIR/$PHP_LIBDIR, FFI_SHARED_LIBADD)
     AC_DEFINE(HAVE_FFI,1,[ Have ffi support ])
   ], [
